@@ -30,13 +30,6 @@
 #define MONITOR_ZOOM        1
 #endif
 
-#ifndef MONITOR_HOR_RES
-#define MONITOR_HOR_RES        LV_HOR_RES
-#endif
-
-#ifndef MONITOR_VER_RES
-#define MONITOR_VER_RES        LV_VER_RES
-#endif
 
 /**********************
  *      TYPEDEFS
@@ -46,10 +39,12 @@ typedef struct {
     SDL_Renderer * renderer;
     SDL_Texture * texture;
     volatile bool sdl_refr_qry;
+    uint32_t hor_res;
+    uint32_t ver_res;
 #if MONITOR_DOUBLE_BUFFERED
     uint32_t * tft_fb_act;
 #else
-    uint32_t tft_fb[LV_HOR_RES_MAX * LV_VER_RES_MAX];
+    uint32_t * tft_fb;
 #endif
 }monitor_t;
 
@@ -92,8 +87,24 @@ static volatile bool sdl_quit_qry = false;
 /**
  * Initialize the monitor
  */
-void monitor_init(void)
+void monitor_init(uint32_t hor_res, uint32_t ver_res)
 {
+    monitor.hor_res = hor_res;
+    monitor.ver_res = ver_res;
+#if MONITOR_DOUBLE_BUFFERED
+#else
+    monitor.tft_fb = malloc(hor_res * ver_res * sizeof(uint32_t));
+#endif
+
+#if MONITOR_DUAL
+    monitor2.hor_res = hor_res;
+    monitor2.ver_res = ver_res;
+#if MONITOR_DOUBLE_BUFFERED
+#else
+    monitor2.tft_fb = malloc(hor_res * ver_res * sizeof(uint32_t));
+#endif
+#endif
+
     monitor_sdl_init();
     lv_task_create(sdl_event_handler, 10, LV_TASK_PRIO_HIGH, NULL);
 }
@@ -134,7 +145,7 @@ void monitor_flush(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_color_t 
 #else
     uint32_t w = lv_area_get_width(area);
     for(y = area->y1; y <= area->y2 && y < disp_drv->ver_res; y++) {
-        memcpy(&monitor.tft_fb[y * MONITOR_HOR_RES + area->x1], color_p, w * sizeof(lv_color_t));
+        memcpy(&monitor.tft_fb[y * disp_drv->hor_res + area->x1], color_p, w * sizeof(lv_color_t));
         color_p += w;
     }
 #endif
@@ -321,7 +332,7 @@ static void monitor_sdl_clean_up(void)
     SDL_Quit();
 }
 
-static void monitor_sdl_init(void)
+static void monitor_sdl_init()
 {
     /*Initialize the SDL*/
     SDL_Init(SDL_INIT_VIDEO);
@@ -333,8 +344,8 @@ static void monitor_sdl_init(void)
     window_create(&monitor2);
     int x, y;
     SDL_GetWindowPosition(monitor2.window, &x, &y);
-    SDL_SetWindowPosition(monitor.window, x + (MONITOR_HOR_RES * MONITOR_ZOOM) / 2 + 10, y);
-    SDL_SetWindowPosition(monitor2.window, x - (MONITOR_HOR_RES * MONITOR_ZOOM) / 2 - 10, y);
+    SDL_SetWindowPosition(monitor.window, x + (monitor.hor_res * MONITOR_ZOOM) / 2 + 10, y);
+    SDL_SetWindowPosition(monitor2.window, x - (monitor2.hor_res * MONITOR_ZOOM) / 2 - 10, y);
 #endif
 
     sdl_inited = true;
@@ -345,18 +356,18 @@ static void window_create(monitor_t * m)
 {
     m->window = SDL_CreateWindow("TFT Simulator",
                               SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
-                              MONITOR_HOR_RES * MONITOR_ZOOM, MONITOR_VER_RES * MONITOR_ZOOM, 0);       /*last param. SDL_WINDOW_BORDERLESS to hide borders*/
+                              m->hor_res * MONITOR_ZOOM, m->ver_res * MONITOR_ZOOM, 0);       /*last param. SDL_WINDOW_BORDERLESS to hide borders*/
 
     m->renderer = SDL_CreateRenderer(m->window, -1, SDL_RENDERER_SOFTWARE);
     m->texture = SDL_CreateTexture(m->renderer,
-                                SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, MONITOR_HOR_RES, MONITOR_VER_RES);
+                                SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, m->hor_res, m->ver_res);
     SDL_SetTextureBlendMode(m->texture, SDL_BLENDMODE_BLEND);
 
     /*Initialize the frame buffer to gray (77 is an empirical value) */
 #if MONITOR_DOUBLE_BUFFERED
-    SDL_UpdateTexture(m->texture, NULL, m->tft_fb_act, MONITOR_HOR_RES * sizeof(uint32_t));
+    SDL_UpdateTexture(m->texture, NULL, m->tft_fb_act, m->hor_res * sizeof(uint32_t));
 #else
-    memset(m->tft_fb, 0x44, MONITOR_HOR_RES * MONITOR_VER_RES * sizeof(uint32_t));
+    memset(m->tft_fb, 0x44, m->hor_res * m->ver_res * sizeof(uint32_t));
 #endif
 
     m->sdl_refr_qry = true;
@@ -366,16 +377,16 @@ static void window_create(monitor_t * m)
 static void window_update(monitor_t * m)
 {
 #if MONITOR_DOUBLE_BUFFERED == 0
-    SDL_UpdateTexture(m->texture, NULL, m->tft_fb, MONITOR_HOR_RES * sizeof(uint32_t));
+    SDL_UpdateTexture(m->texture, NULL, m->tft_fb, m->hor_res * sizeof(uint32_t));
 #else
     if(m->tft_fb_act == NULL) return;
-    SDL_UpdateTexture(m->texture, NULL, m->tft_fb_act, MONITOR_HOR_RES * sizeof(uint32_t));
+    SDL_UpdateTexture(m->texture, NULL, m->tft_fb_act, m->hor_res * sizeof(uint32_t));
 #endif
     SDL_RenderClear(m->renderer);
 #if LV_COLOR_SCREEN_TRANSP
     SDL_SetRenderDrawColor(m->renderer, 0xff, 0, 0, 0xff);
     SDL_Rect r;
-    r.x = 0; r.y = 0; r.w = MONITOR_HOR_RES; r.w = MONITOR_VER_RES;
+    r.x = 0; r.y = 0; r.w = m->hor_res; r.w = m->ver_res;
     SDL_RenderDrawRect(m->renderer, &r);
 #endif
 
