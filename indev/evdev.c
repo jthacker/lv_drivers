@@ -54,10 +54,15 @@ int evdev_key_val;
  */
 void evdev_init(void)
 {
+    evdev_init_with_path(EVDEV_NAME);
+}
+
+void evdev_init_with_path(const char* path)
+{
 #if USE_BSD_EVDEV
-    evdev_fd = open(EVDEV_NAME, O_RDWR | O_NOCTTY);
+    evdev_fd = open(path, O_RDWR | O_NOCTTY);
 #else
-    evdev_fd = open(EVDEV_NAME, O_RDWR | O_NOCTTY | O_NDELAY);
+    evdev_fd = open(path, O_RDWR | O_NOCTTY | O_NDELAY);
 #endif
     if(evdev_fd == -1) {
         perror("unable open evdev interface:");

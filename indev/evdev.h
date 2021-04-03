@@ -42,9 +42,14 @@ extern "C" {
  **********************/
 
 /**
- * Initialize the evdev
+ * Initialize the evdev from the path defined in EVDEV_NAME
  */
 void evdev_init(void);
+/**
+ * Initialize evdev from the specified device.
+ * @param path path to the evdev device
+ */
+void evdev_init_with_path(const char* path);
 /**
  * reconfigure the device file for evdev
  * @param dev_name set the evdev device filename
