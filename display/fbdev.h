@@ -40,7 +40,15 @@ extern "C" {
 /**********************
  * GLOBAL PROTOTYPES
  **********************/
+/**
+ * Initialize the fbdev from the device specified in FBDEV_PATH
+ */
 void fbdev_init(void);
+/**
+ * Initialize the fbdev from the specified device, e.g. /dev/fb0
+ * @param path path to the framebuffer device
+ */
+void fbdev_init_with_path(const char * path);
 void fbdev_exit(void);
 void fbdev_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * color_p);
 void fbdev_get_sizes(uint32_t *width, uint32_t *height);
