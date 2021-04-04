@@ -92,7 +92,7 @@ void fbdev_init_with_path(const char * path)
         perror("Error: cannot open framebuffer device");
         return;
     }
-    printf("The framebuffer device was opened successfully.\n");
+    LV_LOG_INFO("The framebuffer device was opened successfully");
 
 #if USE_BSD_FBDEV
     struct fbtype fb;
@@ -132,7 +132,7 @@ void fbdev_init_with_path(const char * path)
     }
 #endif /* USE_BSD_FBDEV */
 
-    printf("%dx%d, %dbpp\n", vinfo.xres, vinfo.yres, vinfo.bits_per_pixel);
+    LV_LOG_INFO("%dx%d, %dbpp\n", vinfo.xres, vinfo.yres, vinfo.bits_per_pixel);
 
     // Figure out the size of the screen in bytes
     screensize =  finfo.smem_len; //finfo.line_length * vinfo.yres;    
@@ -145,7 +145,7 @@ void fbdev_init_with_path(const char * path)
     }
     memset(fbp, 0, screensize);
 
-    printf("The framebuffer device was mapped to memory successfully.\n");
+    LV_LOG_INFO("The framebuffer device was mapped to memory successfully");
 
 }
 
