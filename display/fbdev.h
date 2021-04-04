@@ -52,6 +52,11 @@ void fbdev_init_with_path(const char * path);
 void fbdev_exit(void);
 void fbdev_flush(lv_disp_drv_t * drv, const lv_area_t * area, lv_color_t * color_p);
 void fbdev_get_sizes(uint32_t *width, uint32_t *height);
+/**
+ * Clear the screen by zeroing out the framebuffer.
+ * Useful to call after exiting.
+ */
+void fbdev_clear_screen(lv_disp_drv_t * drv);
 
 
 /**********************

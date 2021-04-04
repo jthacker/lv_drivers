@@ -154,6 +154,16 @@ void fbdev_exit(void)
     close(fbfd);
 }
 
+void fbdev_clear_screen(lv_disp_drv_t * drv)
+{
+    if(fbp == NULL) {
+        return;
+    }
+
+    memset(fbp, 0, finfo.smem_len);
+    lv_disp_flush_ready(drv);
+}
+
 /**
  * Flush a buffer to the marked area
  * @param drv pointer to driver where this function belongs
