@@ -43,6 +43,14 @@ extern "C" {
 void monitor_init(void);
 void monitor_flush(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_color_t * color_p);
 void monitor_flush2(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_color_t * color_p);
+/**
+ * Return true after the window has been closed
+ */
+bool monitor_window_is_closed(void);
+/**
+ * Prevent monitor from calling `exit` when the window closes.
+ */
+void monitor_set_exit_on_close(bool exit_on_close);
 
 /**********************
  *      MACROS

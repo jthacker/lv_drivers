@@ -79,6 +79,7 @@ monitor_t monitor2;
 
 static volatile bool sdl_inited = false;
 static volatile bool sdl_quit_qry = false;
+static volatile bool exit_on_close = true;
 
 
 /**********************
@@ -214,6 +215,14 @@ void monitor_flush2(lv_disp_drv_t * disp_drv, const lv_area_t * area, lv_color_t
 }
 #endif
 
+void monitor_set_exit_on_close(bool local_exit_on_close) {
+    exit_on_close = local_exit_on_close;
+}
+
+bool monitor_window_is_closed(void) {
+    return sdl_quit_qry;
+}
+
 /**********************
  *   STATIC FUNCTIONS
  **********************/
@@ -262,7 +271,9 @@ static void sdl_event_handler(lv_task_t * t)
     /*Run until quit event not arrives*/
     if(sdl_quit_qry) {
         monitor_sdl_clean_up();
-        exit(0);
+        if (exit_on_close) {
+            exit(0);
+        }
     }
 }
 
